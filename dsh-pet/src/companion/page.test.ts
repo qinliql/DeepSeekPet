@@ -1,3 +1,4 @@
+import { musicScript } from '../app/music-page.ts';
 import { studioScript } from '../app/studio-page.ts';
 /** Embedded browser scripts must parse as delivered, not only as TypeScript templates. */
 import { test } from 'node:test';
@@ -10,3 +11,5 @@ test('companion and messenger browser scripts parse without broken template esca
   assert.doesNotThrow(() => new Script(companionScript));
   assert.doesNotThrow(() => new Script(chatScript));
 });
+
+test('music browser script parses', () => assert.doesNotThrow(() => new Script(musicScript)));

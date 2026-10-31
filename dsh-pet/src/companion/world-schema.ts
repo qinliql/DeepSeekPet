@@ -159,7 +159,7 @@ export const sceneSchema = z.object({
 export function initialWorld(now: number): WorldData {
   return worldSchema.parse({
     version: 1,
-    user: { name: '你', address: '爸爸', relation: '父女', background: '', preferences: '', boundaries: '' },
+    user: { name: '你', address: '主人', relation: '陪伴', background: '', preferences: '', boundaries: '' },
     fish: {
       background: '鱼团住在自己的小世界里，平日上学，放学后有自己的生活。大肥鱼是昵称。',
       interests: '画画、收集小物件、尝试做点心',

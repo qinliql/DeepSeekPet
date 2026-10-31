@@ -1,3 +1,5 @@
+import type { Music } from '../companion/music.ts';
+import { musicPage, musicScript, musicStyle } from './music-page.ts';
 import { studioPage, studioScript, studioStyle, studioLayoutStyle, embeddedStudioStyle } from './studio-page.ts';
 import { handleManagement, type ManageServices } from './manage.ts';
 import type { AppearanceService } from '../companion/appearance.ts';
@@ -27,6 +29,7 @@ import { settingsPage, settingsScript, settingsStyle } from '../standalone/setti
 
 /** 路由依赖：安全校验、AI 处理器与两个页面的数据源，全部注入以脱离 Electron 测试。 */
 interface RouterDeps extends Partial<ManageServices> {
+  music?: Music;
   security: RequestSecurity;
   companion?: Companion;
   appearance?: AppearanceService;
@@ -84,6 +87,32 @@ export function startRouter(
         if (await handleManagement(request, res, url, deps as ManageServices)) return;
       }
 
+      if (url.pathname === '/music/state' && deps.music) {
+        if (method !== 'GET') {
+          rejectRequest(res, 405, '仅支持读取');
+          return;
+        }
+        sendText(res, 200, 'application/json', JSON.stringify(deps.music.read()));
+        return;
+      }
+      if (url.pathname === '/music/control' && deps.music) {
+        if (method !== 'POST') {
+          rejectRequest(res, 405, '仅支持修改');
+          return;
+        }
+        try {
+          let raw = '';
+          for await (const chunk of request) raw += String(chunk);
+          sendText(res, 200, 'application/json', JSON.stringify(deps.music.control(JSON.parse(raw))));
+        } catch {
+          rejectRequest(res, 400, '播放设置无效');
+        }
+        return;
+      }
+      if (url.pathname.startsWith('/music/audio/') && deps.music) {
+        deps.music.stream(request, res, url.pathname.slice('/music/audio/'.length));
+        return;
+      }
       if (url.pathname === '/avatar.jpg') {
         if (method !== 'GET') {
           rejectRequest(res, 405, '仅支持GET');
@@ -98,7 +127,10 @@ export function startRouter(
           if (method === 'POST') {
             let raw = '';
             for await (const chunk of request) raw += String(chunk);
-            deps.appearance.save(JSON.parse(raw));
+            const patch = JSON.parse(raw);
+            deps.appearance.save(patch);
+            if (patch.owner !== undefined && deps.world)
+              deps.world.update({ user: { address: deps.appearance.read().owner } });
           } else if (method !== 'GET') {
             rejectRequest(res, 405, '不支持的方法');
             return;
@@ -110,6 +142,7 @@ export function startRouter(
             'application/json',
             JSON.stringify({
               ...deps.appearance.read(),
+              ...(deps.world ? { owner: deps.world.read().user.address } : {}),
               ...(companion?.enabled ? { vitals: companion.pets.main.vitals } : {}),
             }),
           );
@@ -149,9 +182,10 @@ export function startRouter(
       const assets: Record<string, readonly [string, string]> = {
         '/standalone-ai/': [settingsPage, 'text/html'],
         '/companion.js': [companionScript, 'text/javascript'],
-        '/chat/': [chatPage, 'text/html'],
+        '/chat/': [chatPage.replace('<!--music-panel-->', musicPage), 'text/html'],
+        '/music.js': [musicScript, 'text/javascript'],
         '/chat.js': [chatScript, 'text/javascript'],
-        '/chat.css': [chatStyle + chatExtraStyle + workspaceStyle, 'text/css'],
+        '/chat.css': [chatStyle + chatExtraStyle + workspaceStyle + musicStyle, 'text/css'],
         '/studio/': [studioPage, 'text/html'],
         '/studio.js': [studioScript, 'text/javascript'],
         '/studio.css': [studioStyle + studioLayoutStyle + embeddedStudioStyle, 'text/css'],

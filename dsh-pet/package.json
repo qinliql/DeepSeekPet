@@ -1,6 +1,6 @@
 {
   "name": "dsh-pet",
-  "version": "0.5.3",
+  "version": "0.5.5",
   "description": "鱼团：独立运行的 DeepSeek 长期陪伴桌宠，支持聊天、记忆、世界故事和角色设定。",
   "icon": "assets/logo.png",
   "keywords": [

@@ -276,7 +276,7 @@ Object.assign(PetSprite.prototype, {
               ? ['吃白饭']
               : preference.vitals?.energy < 25
                 ? ['哈欠连天']
-                : ['哈欠连天', '超大伸懒腰', '悠闲哼歌'];
+                : ['哈欠连天', '超大伸懒腰', '悠闲哼歌', '点击回应-傲娇生气'];
           this.playOnce(S.pick(variations, this.anim));
         } else this.playOnce(preference.vitals?.energy < 25 ? '原地小憩沉眠' : '待机呼吸休闲');
         return;
@@ -377,6 +377,14 @@ Object.assign(PetSprite.prototype, {
       // 非 workStatus 事件动画（余额/碎碎念）播完：workStatus 仍非终态 → 立即恢复档位循环动画，
       // 不进随机链（长事件期间状态不变，随机链会一直播到状态切换才被拉回）
       if (this.resumeWorkStatusAnim()) return;
+      if (
+        typeof OPEN_TARGET !== 'undefined' &&
+        OPEN_TARGET === 'standalone' &&
+        this.pet.companionAppearance?.quiet !== false
+      ) {
+        this.playIdle();
+        return;
+      }
       if (animations.idle.length) this.playOnce(S.pick(animations.idle, this.anim));
       return;
     }
@@ -387,6 +395,14 @@ Object.assign(PetSprite.prototype, {
     if (animations.drag.includes(this.anim) || animations.clicks.includes(this.anim)) {
       // 互动动画播完：workStatus 非终态时恢复状态循环，否则回 idle（与浏览器同一语义）
       if (this.resumeWorkStatusAnim()) return;
+      if (
+        typeof OPEN_TARGET !== 'undefined' &&
+        OPEN_TARGET === 'standalone' &&
+        this.pet.companionAppearance?.quiet !== false
+      ) {
+        this.playIdle();
+        return;
+      }
       if (animations.idle.length) this.playOnce(S.pick(animations.idle, this.anim));
       return;
     }

@@ -10,7 +10,16 @@ const { contextBridge, ipcRenderer } = require('electron');
 
 contextBridge.exposeInMainWorld('petBridge', {
   ...(process.env.DSH_PET_APP_MODE === '1'
-    ? { openChat: (petId, view) => ipcRenderer.invoke('whale:open-chat', view ? { id: petId, view } : petId) }
+    ? {
+        openChat: (petId, view) => ipcRenderer.invoke('whale:open-chat', view ? { id: petId, view } : petId),
+        chatVisible: (petId) => ipcRenderer.invoke('whale:chat-visible', petId),
+        poke: (petId, text) => ipcRenderer.invoke('whale:poke', { petId, text }),
+        onChatVisibility: (listener) => {
+          const handler = (_event, value) => listener(value);
+          ipcRenderer.on('whale:chat-visibility', handler);
+          return () => ipcRenderer.removeListener('whale:chat-visibility', handler);
+        },
+      }
     : {}),
   // 宠物窗口逐帧跟随：x/y/width/height 是窗口内容区坐标（用于移动窗口），
   // boxX/boxY 是宠物包围盒左上角的工作区坐标——碰撞站场必须用包围盒，窗口坐标差半只宠物宽。

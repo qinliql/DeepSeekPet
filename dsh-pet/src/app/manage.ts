@@ -164,8 +164,10 @@ export async function handleManagement(
       s.reality?.settings(p);
       send(res, { ok: true, reality: await s.reality?.lookup(true) });
       return true;
-    } else if (path === '/manage/world') s.world.update(raw);
-    else if (path === '/manage/story') s.world.story(raw);
+    } else if (path === '/manage/world') {
+      s.world.update(raw);
+      s.appearance.save({ owner: s.world.read().user.address });
+    } else if (path === '/manage/story') s.world.story(raw);
     else if (path === '/manage/suggest') {
       const p = z.object({ storyId: z.string(), text: z.string() }).strict().parse(raw);
       s.world.suggest(p.storyId, p.text);

@@ -150,6 +150,10 @@ PetSprite.prototype.clearWhisper = function clearWhisper() {
 // 于是缺 events.whisper 时只弹气泡也走得通。duration === 0 表示这一条不显示，且不动当前气泡
 // （要收起请用 POST /bubble/clear，两件事不重叠）。
 PetSprite.prototype.showWhisper = function showWhisper(text, image, url, duration, anim) {
+  if (this.companionChatVisible) {
+    this.clearWhisper();
+    return;
+  }
   let name = null;
   if (anim !== false) {
     const pool = this.animations.events?.whisper;

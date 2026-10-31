@@ -27,6 +27,7 @@ export type ChatGenerateResult =
 /** 记忆中的一条消息：GET /chat 返回的窗口条目就是它。 */
 export interface ChatMemoryMessage {
   proactive?: boolean;
+  localInteraction?: boolean;
   worldEventId?: string;
   role: 'user' | 'assistant';
   content: string;

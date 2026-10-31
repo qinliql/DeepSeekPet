@@ -43,3 +43,6 @@ assets/avatar.jpg
 .DS_Store
 Thumbs.db
 __pycache__/
+
+# Local-only music paths and playlists
+music.json

@@ -42,6 +42,7 @@ function publicRead(req: IncomingMessage): boolean {
       '/companion.js',
       '/chat/',
       '/chat.js',
+      '/music.js',
       '/chat.css',
       '/avatar.jpg',
       '/user-avatar.jpg',

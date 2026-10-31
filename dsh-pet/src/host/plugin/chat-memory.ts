@@ -1,3 +1,4 @@
+import { addressReply } from '../../companion/address.ts';
 import { fitHistory } from '../../companion/history-budget.ts';
 import type { World } from '../../companion/world.ts';
 import type { ConversationStore } from '../../companion/conversation-store.ts';
@@ -136,7 +137,7 @@ export function createChatMemory(deps: ChatMemoryInput) {
           ? '\n当前角色设定：正式名字是' +
             appearance.read().name +
             '，主人称呼是' +
-            appearance.read().owner +
+            (world?.read().user.address ?? appearance.read().owner) +
             '。' +
             appearance.read().personality
           : ''),
@@ -325,6 +326,11 @@ export function createChatMemory(deps: ChatMemoryInput) {
       }
       const list = sliceMemoryRounds(cut === undefined ? entry.messages : entry.messages.slice(0, cut), rounds);
       if (ctx.whaleReality) system += '\n' + (await ctx.whaleReality.context(text));
+      if (world)
+        system +=
+          '\n【称呼规则】用户现在指定的称呼是「' +
+          world.read().user.address +
+          '」，必须遵循当前称呼，不要从历史对话、记忆或父女关系推断为爸爸。';
       // 图片只记尺寸与字节数（不记 base64）：模型不支持读图时 dsh-llm 会把它投影成占位文本，靠这行日志定位
       if (image !== undefined) {
         log.info(
@@ -344,7 +350,8 @@ export function createChatMemory(deps: ChatMemoryInput) {
         image,
       });
       if (!generated.ok) return generated;
-      const now = Date.now();
+      if (world) generated.text = addressReply(generated.text, world.read().user.address);
+      const now = Math.max(Date.now(), (entry.messages[entry.messages.length - 1]?.ts ?? 0) + 1);
       if (cut !== undefined) {
         companion?.rewind(petId, entry.messages[cut].ts);
         entry.messages = entry.messages.slice(0, cut);
@@ -437,8 +444,27 @@ export function createChatMemory(deps: ChatMemoryInput) {
   const setActivePetId = (id: string): void => {
     activePetId = id;
   };
+  ctx.whaleLocalReply = async (petId: string, text: string) =>
+    withMemoryLock(async () => {
+      const found = findPetInstance(readAllConfig(configPaths), petId);
+      if (!found) throw Error('Pet unavailable');
+      const address = world?.read().user.address ?? appearance?.read().owner ?? '主人';
+      text = addressReply(
+        text.replace(/\{owner\}/g, address).replace(/\{pet\}/g, appearance?.read().name ?? '鱼团'),
+        address,
+      );
+      const mem = await readMemory();
+      const bucket = mem[found.entry] ?? (mem[found.entry] = {});
+      const leaf = bucket[petId] ?? (bucket[petId] = { messages: [] });
+      const ts = Math.max(Date.now(), (leaf.messages[leaf.messages.length - 1]?.ts ?? 0) + 1);
+      leaf.messages.push({ role: 'assistant', content: text, ts, localInteraction: true });
+      await writeMemory(mem);
+      world?.onUser('');
+      state.writePet(petId, 'say', { text, anim: false, duration: 5000 });
+    });
   world?.setPublisher(async (text, eventId) =>
     withMemoryLock(async () => {
+      text = addressReply(text, world.read().user.address);
       const cfg = readAllConfig(configPaths);
       const petId = 'main';
       const found = findPetInstance(cfg, petId);

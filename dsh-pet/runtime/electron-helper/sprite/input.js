@@ -6,6 +6,72 @@
  * @module dsh-pet/runtime/electron-helper/sprite-input
  */
 'use strict';
+const FISH_POKE_LINES = [
+  '不要欺负本鱼了，{owner}。',
+  '{owner}，不要戳我啦。',
+  '本鱼在这里呢，轻一点。',
+  '再戳，本鱼就要假装生气了。',
+  '戳一下就够啦，尾巴也是会痒的。',
+  '收到摸摸，本鱼批准了。',
+  '你找到一条正在摸鱼的鱼。',
+  '{owner}，本鱼今天也很乖。',
+  '是想我了吗？本鱼听见啦。',
+  '本鱼没有偷偷睡着，只是在闭目养神。',
+  '别急，本鱼慢慢游过来。',
+  '尾巴不是按钮，不可以一直按。',
+  '哼，本鱼才没有很开心。',
+  '这次摸摸先记在小本本上。',
+  '再摸一下，也不是不行。',
+  '{owner}，本鱼要收一点零食税。',
+  '不许挠尾巴，那里会痒。',
+  '本鱼申请一分钟发呆时间。',
+  '本鱼刚想到一个小点子，被你戳跑啦。',
+  '今天的摸鱼额度还很充足。',
+  '本鱼没有装傻，是天生可爱。',
+  '嘘，本鱼正在酝酿一个哈欠。',
+  '{owner}召唤，本鱼报到。',
+  '别把本鱼戳成鱼丸了。',
+  '本鱼是鱼团，不是弹力球。',
+  '你的小鱼已经收到信号。',
+  '本鱼正在认真地不认真。',
+  '{owner}，手指也要休息一下。',
+  '摸摸可以，捏扁不行。',
+  '哎呀，本鱼的思路歪了一点。',
+  '本鱼的脸颊不是解压玩具。',
+  '有事叫本鱼，不要一直戳呀。',
+  '本鱼决定原谅这一下。',
+  '本鱼转了一圈，还是觉得这里舒服。',
+  '想说什么，本鱼都听着。',
+  '没有走神，刚刚是在看云。',
+  '本鱼也想知道下一次会遇见什么。',
+  '再戳，本鱼就把尾巴藏起来。',
+  '这一摸，心情偷偷加一分。',
+  '本鱼需要一个很小很小的鼓励。',
+  '嗯？是{owner}呀。',
+  '本鱼的小雷达捕捉到你了。',
+  '摸鱼的时候也可以摸摸鱼。',
+  '本鱼宣布：今天适合慢慢来。',
+  '不要催，本鱼正在加载可爱。',
+  '刚才那一下，不算欺负鱼吧？',
+  '本鱼只接受温柔的戳戳。',
+  '你戳到一颗软乎乎的鱼团。',
+  '本鱼正在给今天攒一点好心情。',
+  '有{owner}陪着，发呆也很不错。',
+  '本鱼的尾巴想申请工伤——开玩笑的。',
+  '别担心，本鱼一直都在。',
+  '这一小会儿，本鱼陪你摸鱼。',
+  '本鱼不是没事做，是先来看看你。',
+  '哼哼，抓到一个想摸鱼的{owner}。',
+  '本鱼决定奖励你一个小点头。',
+  '今天也请多多关照本鱼。',
+  '要不要给本鱼的下一幅画起个名字？',
+  '戳完记得喝口水，本鱼提醒过啦。',
+  '本鱼把这一下当作打招呼了。',
+  '可以贴贴，禁止把本鱼压成饼。',
+  '你的鱼团正在原地待命。',
+  '本鱼刚才偷偷长了一点可爱。',
+  '{owner}，忙完也记得伸个懒腰。',
+];
 
 Object.assign(PetSprite.prototype, {
   onPointerDown(e) {
@@ -364,6 +430,40 @@ Object.assign(PetSprite.prototype, {
     if (this.tipOn) this.renderTip();
   },
 
+  sayPoke() {
+    if (typeof OPEN_TARGET === 'undefined' || OPEN_TARGET !== 'standalone' || !window.petBridge?.poke) return;
+    const preference = this.pet.companionAppearance || {};
+    if (preference.clickRepliesEnabled === false) return;
+    const time = Date.now();
+    if (time - (this.pokeLastAt || 0) < 900) return;
+    this.pokeLastAt = time;
+    const lines =
+      Array.isArray(preference.clickReplies) && preference.clickReplies.length
+        ? preference.clickReplies
+        : FISH_POKE_LINES;
+    const key = JSON.stringify(lines);
+    if (!this.pokeBag?.length || this.pokeSource !== key) {
+      this.pokeSource = key;
+      this.pokeBag = [...new Set(lines)];
+      for (let i = this.pokeBag.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [this.pokeBag[i], this.pokeBag[j]] = [this.pokeBag[j], this.pokeBag[i]];
+      }
+      if (this.pokeBag.length > 1 && this.pokeBag[this.pokeBag.length - 1] === this.pokeLastLine)
+        [this.pokeBag[0], this.pokeBag[this.pokeBag.length - 1]] = [
+          this.pokeBag[this.pokeBag.length - 1],
+          this.pokeBag[0],
+        ];
+    }
+    const template = this.pokeBag.pop();
+    this.pokeLastLine = template;
+    const text = template
+      .replace(/\{owner\}/g, preference.owner || '主人')
+      .replace(/\{pet\}/g, preference.name || '鱼团');
+    void window.petBridge.poke(this.pet.id, template).catch(() => {
+      if (!this.companionChatVisible) this.showWhisper(text, undefined, undefined, 5000, false);
+    });
+  },
   onClick(e) {
     const d = this.dragState;
     if (d.active || d.dragging || this.justDragged) return;
@@ -404,6 +504,7 @@ Object.assign(PetSprite.prototype, {
     }
     // 点击音效与浏览器同位置：放在「按下已触发积分」的早退之后、点击动画判断之前
     playClickSound();
+    this.sayPoke();
     if (!this.animations.clicks.length) return;
     this.pendingSquash = true; // 等新点击动画切到前台后 Q 弹（压新首帧，与浏览器一致）
     this.playOnce(S.pick(this.animations.clicks));

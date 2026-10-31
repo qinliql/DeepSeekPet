@@ -111,7 +111,12 @@ test('editing profiles/cards/worldbooks, avatar backup and restore preserve ledg
     const backup = await response.json();
     assert.equal(backup.format, 'fish-world-v1');
     assert.equal(JSON.stringify(backup).includes('apiKey'), false);
-    const initial = world.read().user.address;
+    await post('/manage/world', { user: { address: '主人' } });
+    assert.equal(appearance.read().owner, '主人');
+    const changedAddress = await post('/dsh-pet-7340/appearance', { owner: '搭档' });
+    assert.equal(changedAddress.status, 200);
+    assert.equal(world.read().user.address, '搭档');
+    const initial = backup.world.user.address;
     await post('/manage/world', { user: { address: '家长' } });
     assert.equal(world.read().user.address, '家长');
     const ledger = budget.read().spent;

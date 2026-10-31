@@ -1,3 +1,4 @@
+import { createMusic } from '../companion/music.ts';
 import { createReality } from '../companion/reality.ts';
 import { createBudget, type SpendKind } from '../companion/budget.ts';
 import { createWorld } from '../companion/world.ts';
@@ -143,8 +144,10 @@ async function boot(): Promise<void> {
   });
 
   context.ctx.whaleBudget = budget;
+  const music = createMusic(dataRoot);
   const reality = createReality(dataRoot);
   context.ctx.whaleReality = reality;
+  let notifyTimeline = () => {};
   const conversationStore = createConversationStore(dataRoot);
   context.ctx.whaleConversationStore = conversationStore;
   const appearance = createAppearance(join(dshHomeDir(), 'dsh-pet'));
@@ -172,6 +175,7 @@ async function boot(): Promise<void> {
     () => ai.isReady() && budget.backgroundAllowed(),
   );
   context.ctx.whaleWorld = world;
+  appearance.save({ owner: world.read().user.address });
   world.setTranscript(() =>
     Object.entries(conversationStore.read())
       .flatMap(([bucket, pets]) =>
@@ -198,7 +202,10 @@ async function boot(): Promise<void> {
       )
       .join('\n'),
   );
-  conversationStore.onChange(() => world.refreshDiary());
+  conversationStore.onChange(() => {
+    world.refreshDiary();
+    notifyTimeline();
+  });
   world.tick();
   const media = createMedia(dataRoot);
   const observer = createScreenObserver(
@@ -258,6 +265,7 @@ async function boot(): Promise<void> {
     observer,
     conversationStore,
     reality,
+    music,
     log,
     status,
     landingPage,
@@ -313,11 +321,17 @@ async function boot(): Promise<void> {
       security.token,
     );
   });
-  installChatWindows(
+  const chatWindows = installChatWindows(
     origin,
     (url) => url + '#token=' + security.token,
     (id) => desktopPets().some((pet) => pet.id === id),
+    (id, text) => {
+      const reply = context.ctx.whaleLocalReply;
+      if (typeof reply === 'function') return reply(id, text);
+    },
+    (paths) => music.add(paths),
   );
+  notifyTimeline = chatWindows.notify;
   process.env.DSH_PET_APP_TOKEN = security.token;
   try {
     createRequire(import.meta.url)(helperMain);

@@ -4,7 +4,7 @@ import { RecoverableStore } from './store.ts';
 const schema = z
   .object({
     name: z.string().trim().min(1).max(30).default('鱼团'),
-    owner: z.string().trim().min(1).max(30).default('你'),
+    owner: z.string().trim().min(1).max(30).default('主人'),
     sizePercent: z.number().int().min(50).max(180).default(100),
     fontSize: z.number().int().min(15).max(24).default(18),
     accent: z
@@ -12,6 +12,8 @@ const schema = z
       .regex(/^#[0-9a-fA-F]{6}$/)
       .default('#548eaa'),
     quiet: z.boolean().default(true),
+    clickRepliesEnabled: z.boolean().default(true),
+    clickReplies: z.array(z.string().trim().min(1).max(100)).max(200).default([]),
     dragThrowEnabled: z.boolean().default(false),
     idleMinutes: z.number().int().min(2).max(60).default(8),
     personality: z.string().max(1200).default('嘴硬心软，爱摸鱼，贪吃但不吵闹。'),

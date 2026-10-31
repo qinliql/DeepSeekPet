@@ -50,6 +50,12 @@ Object.assign(PetSprite.prototype, {
     window.__dshPetDebug.tooltipOn = this.tipOn;
   },
   renderBubble() {
+    if (this.companionChatVisible && !this.todoOpen) {
+      this.bubble.classList.remove('is-on');
+      window.__dshPetDebug.lastBubbleTitle = '';
+      return;
+    }
+
     // 待办面板占气泡槽且优先级最高：它是用户主动打开的窗口，其余气泡一律让位。
     // 面板是外部塞进来的 DOM，重建 innerHTML 会把它自己抹掉，所以这一段只补显隐与让位。
     this.bubble.classList.toggle('dsh-pet-todo-bubble', this.todoOpen);

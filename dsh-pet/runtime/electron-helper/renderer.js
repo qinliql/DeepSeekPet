@@ -51,6 +51,7 @@ async function loadConfig() {
           pet.size = Math.round((pet.size * percent) / 100);
           pet.userSizePercent = percent;
           pet.dragThrowEnabled = preference.dragThrowEnabled === true;
+          pet.companionAppearance = preference;
         }
       }
     } catch {
@@ -168,8 +169,21 @@ window.addEventListener('resize', () => {
   }
 });
 
+function chatVisibility(value) {
+  for (const sprite of sprites)
+    if (sprite.pet.id === value.petId) {
+      sprite.companionChatVisible = value.visible === true;
+      if (sprite.companionChatVisible) sprite.clearWhisper();
+      sprite.renderBubble();
+    }
+}
+window.petBridge?.onChatVisibility?.(chatVisibility);
 injectAssets();
-void boot();
+void boot().then(async () => {
+  for (const sprite of sprites)
+    if (window.petBridge?.chatVisible)
+      chatVisibility({ petId: sprite.pet.id, visible: await window.petBridge.chatVisible(sprite.pet.id) });
+});
 
 // Size changes must apply even while a looping event animation is holding the idle chain.
 window.setInterval(async () => {
@@ -181,6 +195,7 @@ window.setInterval(async () => {
     const desired = Number(preference.sizePercent) || 100;
     for (const sprite of sprites) {
       sprite.pet.dragThrowEnabled = preference.dragThrowEnabled === true;
+      sprite.pet.companionAppearance = preference;
       if (!sprite.pet.dragThrowEnabled && sprite.throwState) sprite.stopThrow();
     }
     if (

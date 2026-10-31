@@ -47,8 +47,9 @@ function home(){const w=state.world,p=panel('鱼团正在过自己的日子','�
 function profile(kind){const user=kind==='user';const p=panel(user?'我的资料':'鱼团的角色卡',user?'这是你主动填写的人设，聊天推测不能覆盖它。':'背景和说话方式决定她如何生活；实际经历单独保存。');
  image(p,(user?'/user-avatar.jpg':'/avatar.jpg')+'?v='+Date.now());upload(p,user?'user':'fish');const values=user?state.world.user:state.world.fish;const fields={};
  const names=user?{name:'你的名字',address:'鱼团如何称呼你',relation:'你们的关系',background:'你的背景',preferences:'喜欢的相处方式',boundaries:'不希望出现的相处方式'}:{background:'生活背景',interests:'兴趣与想尝试的事',speech:'说话方式与示例',boundaries:'角色边界与不希望出现的剧情'};
+ const address=user?null:field(p,'对你的称呼（与我的资料同步）',state.world.user.address);
  for(const [key,label]of Object.entries(names))fields[key]=field(p,label,values[key],['name','address','relation'].includes(key)?'text':'textarea');
- p.append(button('保存资料',()=>save('/manage/world',{[user?'user':'fish']:Object.fromEntries(Object.entries(fields).map(([key,input])=>[key,input.value]))})));
+ p.append(button('保存资料',()=>save('/manage/world',{[user?'user':'fish']:Object.fromEntries(Object.entries(fields).map(([key,input])=>[key,input.value])),...(!user?{user:{address:address.value}}:{})})));
  if(!user){info(p,'正式名字、主题色、字号和桌宠大小仍在“API 与外观”里调整。');p.append(button('打开外观设置',()=>{location.href='/standalone-ai/#token='+encodeURIComponent(token);},'secondary'));}
 }
 function cards(){const top=panel('背景角色库','默认四位只是初始角色，可以继续添加（最多100位）。单次只参考相关角色以控制费用；停用或移除角色不删除已有故事。');
