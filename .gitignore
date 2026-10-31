@@ -1,0 +1,45 @@
+# Dependencies and generated builds
+node_modules/
+lib/
+dist*/
+coverage/
+playwright-report/
+test-results/
+*.tsbuildinfo
+# Local credentials and runtime profiles
+.env
+.env.*
+!.env.example
+.npmrc
+.pypirc
+*.pem
+*.key
+*.p12
+*.pfx
+standalone-ai.json
+appearance.json
+world.json
+memory.json
+companion.json
+budget.json
+screen.json
+reality.json
+media.json
+world-events*.jsonl
+*生活日记*.md
+*.log
+logs.txt
+*.corrupt-*
+chromium/
+backups/
+snapshots/
+user-data/
+local-data/
+# Personal media and local distributables
+assets/avatar.jpg
+*.zip
+*.exe
+*.asar
+.DS_Store
+Thumbs.db
+__pycache__/
